@@ -3,6 +3,7 @@
 #include <cwchar>
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 const int FRAME_SIZE = 2048;
 
@@ -18,7 +19,9 @@ sf::SoundBuffer mono_conversion(const sf::SoundBuffer &buffer);
 
 std::vector<double> normalize(sf::SoundBuffer &mono_viz);
 
-void window_viz(std::vector<double> &viz_samples);
+std::vector<std::vector<double>> frame_split(std::vector<double> mono_viz);
+
+void window_frames(std::vector<std::vector<double>> &frames);
 
 int main(int argc, char* argv[])
 {
@@ -41,8 +44,9 @@ int main(int argc, char* argv[])
     sf::SoundBuffer mono_viz = mono;
 
     std::vector<double> viz_samples = normalize(mono_viz);
-
-    window_viz(viz_samples);
+    std::vector<std::vector<double>> frames = frame_split(viz_samples);
+    window_frames(frames);
+    
 
     const auto samples = mono_viz.getSamples();
     auto sampleCount = mono_viz.getSampleCount();
@@ -60,7 +64,9 @@ int main(int argc, char* argv[])
     //exit(-1);
     
     sound.play();
+
     // run the program as long as the window is open
+    long lastFrame = -1;
     while (window.isOpen())
     {
         // check all the window's events that were triggered since the last iteration of the loop
@@ -72,11 +78,15 @@ int main(int argc, char* argv[])
         }
 
         auto currentTime = sound.getPlayingOffset();
-        auto currentSample = currentTime.asSeconds() * sampleRate * channelCount;
-        int currentFrame = currentSample / FRAME_SIZE;
+        long currentSample = currentTime.asSeconds() * sampleRate * channelCount;
+        long currentFrame = currentSample / FRAME_SIZE;
 
-        std::cout << currentFrame << std::endl;
-
+        if(currentFrame > lastFrame)
+        {
+            std::cout << currentFrame << std::endl;
+            lastFrame = currentFrame;
+        }
+        
         window.clear(sf::Color::Black);
 
         window.display();
@@ -119,8 +129,43 @@ std::vector<double> normalize(sf::SoundBuffer &mono_viz)
     return viz_samples;
 }
 
-void window_viz(std::vector<double> &viz_samples)
+std::vector<std::vector<double>> frame_split(std::vector<double> mono_viz)
 {
+    std::vector<std::vector<double>> frames;
+    std::vector<double> mono_samples;
+
+    //std::cout << mono_viz.size() << std::endl;
+
+    long x = 0;
+    while (x < mono_viz.size())
+    {
+        if ((x + 1) % FRAME_SIZE == 0)
+        {
+            frames.push_back(mono_samples);
+            mono_samples.clear();
+        }
+        
+        mono_samples.push_back(mono_viz[x]);
+        x++;
+    }
+
+    //std::cout << frames.size() << std::endl;
+    
+
+    //Consider adding last non-empty frame here
+
+    return frames;
+}
+
+//Hann windowing function, thanks wikipedia
+void window_frames(std::vector<std::vector<double>> &frames)
+{
+    for(int x = 0; x < frames.size(); x++)
+        for(int y = 0; y < frames[x].size(); y++)
+        {
+            double multiplier = 0.5 * (1 - cos(2 * M_PI * y / 2047));
+            frames[x][y] = multiplier * frames[x][y];
+        }
     
     return;
 }
