@@ -6,6 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <complex>
+#include <optional>
 
 const int FRAME_SIZE = 2048;
 
@@ -90,7 +91,7 @@ int main(int argc, char* argv[])
     while (window.isOpen())
     {
         // check all the window's events that were triggered since the last iteration of the loop
-        while (std::optional event = window.pollEvent())
+        while (const std::optional event = window.pollEvent())
         {
             // "close requested" event: we close the window
             if (event->is<sf::Event::Closed>())
