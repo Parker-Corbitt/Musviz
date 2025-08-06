@@ -21,3 +21,8 @@ unzip SFML-3.0.0-sources.zip
 
 cmake -B build
 cmake --build build
+
+cd musviz
+mv musviz ../MusViz
+rm -f musviz/
+
