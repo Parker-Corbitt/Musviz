@@ -12,14 +12,6 @@ const int FRAME_SIZE = 2048;
 
 const int NUM_BARS = 32;
 
-/**
- * Next Steps
- * 1 - Window the buffer to eliminate the "click" - look at Hann or Hamming
- * 2 - Perform the FFT with cooley tuckey
- * 3 - Prepare data for visualization
- * 4 - Map data to visuals
- */
-
 sf::SoundBuffer mono_conversion(const sf::SoundBuffer &buffer);
 
 std::vector<double> normalize(sf::SoundBuffer &mono_viz);
@@ -98,6 +90,12 @@ int main(int argc, char* argv[])
                 window.close();
         }
 
+       if (sound.getStatus() != sf::Sound::Status::Playing)
+        {
+            std::cout << "Music has ended." << std::endl;
+            window.close();
+        } 
+
         auto currentTime = sound.getPlayingOffset();
         long currentSample = currentTime.asSeconds() * sampleRate * channelCount;
         long currentFrame = currentSample / FRAME_SIZE;
@@ -166,7 +164,11 @@ std::vector<std::vector<double>> frame_split(std::vector<double> mono_viz)
         x++;
     }
 
-    //Consider adding last non-empty frame here
+    //Adds the last partially filled frame to the vector
+    for( ; (x + 1) % 2048 != 0; x++)
+        mono_samples.push_back(0.0);
+
+    frames.push_back(mono_samples);
 
     return frames;
 }
